@@ -1,0 +1,17 @@
+# Place in ~/.gitconfig
+[user]
+	name = Your Name
+	email = your@email.address
+[alias]
+    unstage = reset HEAD --
+    sw = switch
+    newbr = switch -c
+    br = branch
+    ci = commit
+    di = diff
+    rdiff = diff --submodule=diff
+    st = status
+    dt = difftool
+    cherrypick = cherry-pick
+[diff]
+    tool = tkdiff
