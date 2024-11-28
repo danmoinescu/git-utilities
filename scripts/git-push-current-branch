@@ -1,0 +1,55 @@
+#!/bin/sh
+
+# Push the current base to origin, with an option to rebase on the
+# main branch first
+# Optional argument: --no-rebase
+# Other arguments (such as --force) are pased to "git push"
+
+
+get_current_branch()
+{
+    git status | sed -e 1q | awk '{print $3}'
+}
+
+
+get_main_branch()
+{
+    local main_branch
+    for main_branch_candidate in "main" "master"; do
+        git branch | sed -e 's/^\*//; s/^ *//' \
+            | egrep -q "^$main_branch_candidate$" \
+            && main_branch=$main_branch_candidate
+    done
+    echo "$main_branch"
+}
+
+
+# If the main branch wasn't specified, try to find one (main or master)
+if ! [ "$main_branch" ]; then
+    main_branch=$(get_main_branch)
+
+    if ! [ "$main_branch" ]; then
+        echo >&2 "Couldn't find the main git branch"; exit 1
+    fi
+fi
+
+current_branch=$(get_current_branch)
+if ! [ "$current_branch" ]; then
+    echo >&2 "Could not find current git branch"; exit 1
+fi
+if [ "$current_branch" = "$main_branch" ]; then
+    echo >&2 "Oops! Current branch is $main_branch, will not push it"
+    exit 1
+fi
+
+if [ "$1" = "--no-rebase" ]; then
+    shift
+    git push origin "$@" "$current_branch"
+else
+    set -e
+    if git-rebase-to-main-origin; then
+        git push origin "$@" "$current_branch"
+    else
+        git switch "$current_branch"
+    fi
+fi

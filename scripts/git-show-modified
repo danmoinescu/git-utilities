@@ -1,0 +1,6 @@
+#!/bin/sh
+
+# Like git status, but ignoring the (sometimes annoying) untracked files.
+
+
+git status "$@" | sed -e '/^Untracked files/q'

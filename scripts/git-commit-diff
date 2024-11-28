@@ -1,0 +1,32 @@
+#!/bin/sh
+# List the changes in a commit or in a block of consecutive commits
+
+
+usage()
+{
+    myself=${0##*/}
+    cat >&2 <<END_OF_USAGE
+Usage:
+  For a single commit:
+    $myself commit-id [affected files]
+  For a block of several consecutive commits:
+    $myself -b start-commit-id end-commit-id [affected files]
+END_OF_USAGE
+    
+    exit 1
+}
+
+case "$1" in
+    '-b')
+        start_commit=$2
+        end_commit=$3
+        [ "$end_commit" ] || usage
+        shift 3
+        git diff "$start_commit"~ "$end_commit" "$@"
+        ;;
+    *)
+        commit=$1
+        [ "$commit" ] || usage
+        shift
+        git diff "$commit"~ "$commit" "$@"
+esac
