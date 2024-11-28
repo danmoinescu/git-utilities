@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# Drop a stash after inspecting it
+
+set -e
+stash_idx=$1
+[ "$stash_idx" ] || { echo >&2 "Usage: $0 stash_index"; exit 1; }
+
+echo "Stash $stash_idx:"
+git stash show -v "$stash_idx"
+echo -n "Confirm? [y|N] "
+read answer
+case "$answer" in
+    y|Y|yes|YES|Yes) : ;;
+    *) echo >&2 "Cancelling"; exit 1 ;;
+esac
+exec git stash drop "$stash_idx"

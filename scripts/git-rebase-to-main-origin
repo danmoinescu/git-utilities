@@ -1,0 +1,55 @@
+#!/bin/sh
+
+# Update the main branch from origin and (if desired) rebase the
+# current branch on the main branch
+
+
+get_main_branch()
+{
+    local main_branch
+    for main_branch_candidate in "main" "master"; do
+        git branch | sed -e 's/^\*//; s/^ *//' \
+            | egrep -q "^$main_branch_candidate$" \
+            && main_branch=$main_branch_candidate
+    done
+    echo "$main_branch"
+}
+
+# If the main branch wasn't specified, try to find one (main or master)
+if ! [ "$main_branch" ]; then
+    main_branch=$(get_main_branch)
+    if ! [ "$main_branch" ]; then
+        echo >&2 "Couldn't find the main git branch"; exit 1
+    fi
+fi
+
+if [ "$1" = '-y' ]; then
+    ask_for_rebase_confirmation=no
+    shift
+else
+    ask_for_rebase_confirmation=yes
+fi
+
+set -e
+current_branch=$(git status | sed -e 1q | awk '{print $3}')
+[ -n "$current_branch" ] || { echo >&2 "Could not find current git branch"; exit 1; }
+
+echo "Current branch is $current_branch"
+if [ "$current_branch" != "$main_branch" ]; then
+    git switch "$main_branch"
+    git pull origin "$main_branch"
+    git switch "$current_branch"
+    if [ "$ask_for_rebase_confirmation" = yes ]; then
+        echo -n "Proceed with rebase? [y|N] "; read want_rebase
+    else
+        want_rebase=y
+    fi
+    if [ "$want_rebase" = y ]; then
+        git rebase "$main_branch"
+    fi
+else
+    # already on the main branch, no rebase will occur
+    git pull origin "$main_branch"
+fi
+
+git remote prune origin

@@ -1,0 +1,26 @@
+#!/bin/sh
+
+# Run cherry-pick only if it applies cleanly (or if you're sure).
+# Avoids making an unintended mess of the tree
+
+
+if [ "$1" = "-p" ]; then
+    try_patching=true
+    shift
+fi
+
+commit_id=$1
+if [ ! "$commit_id" ]; then
+    cat >&2 <<EOF
+Usage: $0 [-p] commit_id
+-p: if cherry-picking fails, apply the patch
+EOF
+    exit 1
+fi
+
+git diff "$commit_id"~ "$commit_id" | patch -p1 --dry-run -f \
+    && git cherry-pick "$commit_id"
+
+if [ $? != 0 ] && [ "$try_patching" ]; then
+    git diff "$commit_id"~ "$commit_id" | patch -p1 -f
+fi
