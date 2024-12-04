@@ -10,10 +10,19 @@ get_main_branch()
     for main_branch_candidate in "main" "master"; do
         git branch | sed -e 's/^\*//; s/^ *//' \
             | egrep -q "^$main_branch_candidate$" \
-            && main_branch=$main_branch_candidate
+            && main_branch=$main_branch_candidate \
+            && break
     done
     echo "$main_branch"
 }
+
+
+set -e
+current_branch=$(git status | sed -e 1q | awk '{print $3}')
+[ -n "$current_branch" ] || { echo >&2 "Could not find current git branch"; exit 1; }
+
+trap 'exit 1' INT
+trap 'git switch "$current_branch"' exit
 
 # If the main branch wasn't specified, try to find one (main or master)
 if ! [ "$main_branch" ]; then
@@ -29,10 +38,6 @@ if [ "$1" = '-y' ]; then
 else
     ask_for_rebase_confirmation=yes
 fi
-
-set -e
-current_branch=$(git status | sed -e 1q | awk '{print $3}')
-[ -n "$current_branch" ] || { echo >&2 "Could not find current git branch"; exit 1; }
 
 echo "Current branch is $current_branch"
 if [ "$current_branch" != "$main_branch" ]; then
