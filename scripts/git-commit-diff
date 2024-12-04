@@ -11,6 +11,8 @@ Usage:
     $myself commit-id [affected files]
   For a block of several consecutive commits:
     $myself -b start-commit-id end-commit-id [affected files]
+  For the latest commit in the current branch:
+    $myself -l [affected files]
 END_OF_USAGE
     
     exit 1
@@ -22,11 +24,21 @@ case "$1" in
         end_commit=$3
         [ "$end_commit" ] || usage
         shift 3
-        git diff "$start_commit"~ "$end_commit" "$@"
+        ;;
+    '-l')
+        start_commit=$(git log | head -n1 | awk '{print $2}')
+        if ! [ "$start_commit" ]; then
+            echo >&2 "Cannot find any commits!"
+            exit 1
+        fi
+        end_commit=$start_commit
+        shift
         ;;
     *)
-        commit=$1
-        [ "$commit" ] || usage
+        start_commit=$1
+        [ "$start_commit" ] || usage
+        end_commit=$start_commit
         shift
-        git diff "$commit"~ "$commit" "$@"
 esac
+
+git diff "$start_commit"~ "$end_commit" "$@"
