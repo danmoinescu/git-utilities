@@ -19,7 +19,9 @@ get_main_branch()
 
 set -e
 current_branch=$(git status | sed -e 1q | awk '{print $3}')
-[ -n "$current_branch" ] || { echo >&2 "Could not find current git branch"; exit 1; }
+if ! [ "$current_branch" ]; then
+   echo >&2 "Cannot find the current git branch"; exit 1
+fi
 
 trap 'exit 1' INT
 trap 'git switch "$current_branch"' exit
@@ -28,7 +30,7 @@ trap 'git switch "$current_branch"' exit
 if ! [ "$main_branch" ]; then
     main_branch=$(get_main_branch)
     if ! [ "$main_branch" ]; then
-        echo >&2 "Couldn't find the main git branch"; exit 1
+        echo >&2 "Cannot find the main git branch"; exit 1
     fi
 fi
 
@@ -45,7 +47,8 @@ if [ "$current_branch" != "$main_branch" ]; then
     git pull origin "$main_branch"
     git switch "$current_branch"
     if [ "$ask_for_rebase_confirmation" = yes ]; then
-        echo -n "Proceed with rebase? [y|N] "; read want_rebase
+        echo -n "Rebase on $main_branch? [y|N] "
+        read want_rebase
     else
         want_rebase=y
     fi
