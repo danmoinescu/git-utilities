@@ -1,0 +1,11 @@
+#!/bin/sh
+
+# Run `git difftool` on all matching modified files in the git tree
+# Examples:
+# alldiffs - run for all modified files in the entire git tree
+# alldiffs . - run for all modified files in the current directory
+# alldiffs ../somefile - run for ../somefile
+
+git status "$@" \
+    | sed -ne '/^\s*modified:/ { s/^[^:]*:\s*//; p; }' \
+    | while read fname; do yes | git difftool "$fname" & done
